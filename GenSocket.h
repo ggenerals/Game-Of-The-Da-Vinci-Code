@@ -44,8 +44,8 @@ enum class GenSocketFlags : unsigned int {
     Reserved_27 = 1 << 27,
     Reserved_28 = 1 << 28,
     Reserved_29 = 1 << 29,
-    Reserved_30 = 1 << 30,
-    Reserved_31 = 1 << 31
+    Reserved_30 = 1u << 30,
+    Reserved_31 = (1u << 31)
 };
 
 inline GenSocketFlags operator|(GenSocketFlags a, GenSocketFlags b) {

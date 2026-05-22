@@ -53,9 +53,9 @@ struct Tile {
             }
         } else {
             if (isWhite) {
-                return COLOR_WHITE + "[?]" + COLOR_RESET;
+                return std::string(COLOR_WHITE) + "[?]" + std::string(COLOR_RESET);
             } else {
-                return COLOR_GRAY + "[?]" + COLOR_RESET;
+                return std::string(COLOR_GRAY) + "[?]" + std::string(COLOR_RESET);
             }
         }
     }
@@ -121,7 +121,7 @@ enum class MessageType {
     GUESS_RESULT,
     CHAT,
     GAME_OVER,
-    ERROR
+    MSG_ERROR
 };
 
 // 消息结构
@@ -138,7 +138,7 @@ struct GameMessage {
         msg += std::to_string(playerId) + "|";
         msg += std::to_string(targetIndex) + "|";
         msg += std::to_string(guessValue) + "|";
-        msg += (guessIsWhite ? "1" : "0") + "|";
+        msg += (guessIsWhite ? std::string("1") : std::string("0")) + "|";
         msg += data;
         return msg;
     }
@@ -202,7 +202,7 @@ public:
             return false;
         }
         
-        gameSocket = GenSocket_CreateServer(8888);
+        gameSocket = GenSocket_CreateServerSocket(8888);
         if (gameSocket == INVALID_SOCKET) {
             std::cerr << "Failed to create server socket" << std::endl;
             return false;
@@ -216,13 +216,15 @@ public:
         std::cout << COLOR_GREEN << "Server started. Waiting for client..." << COLOR_RESET << std::endl;
         
         // 接受客户端连接
-        GenClientConnection* client = GenSocket_Accept(gameSocket, "Client", "Remote player");
-        if (!client) {
+        sockaddr_in clientAddr;
+        int addrLen = sizeof(clientAddr);
+        SOCKET clientSocket = GenSocket_AcceptClient(gameSocket, &clientAddr, &addrLen);
+        if (clientSocket == INVALID_SOCKET) {
             std::cerr << "Failed to accept client" << std::endl;
             return false;
         }
         
-        gameSocket = client->socket;
+        gameSocket = clientSocket;
         totalPlayers = 2;
         playerNames.push_back("Client");
         opponentHands.resize(1);
@@ -239,7 +241,7 @@ public:
             return false;
         }
         
-        gameSocket = GenSocket_Connect(serverIP.c_str(), 8888);
+        gameSocket = GenSocket_ConnectToServer(serverIP.c_str(), 8888);
         if (gameSocket == INVALID_SOCKET) {
             std::cerr << "Failed to connect to server" << std::endl;
             return false;
@@ -310,10 +312,22 @@ public:
         }
         std::cout << std::endl;
         
-        // 显示对手的手牌（未翻开的显示为[?]）
-        std::cout << COLOR_RED << opponentHands[0].tiles.empty() ? "" : playerNames[1 - myPlayerId] << "'s hand:" << COLOR_RESET << std::endl;
-        opponentHands[0].display(false);
+        // 显示对手的手牌（未翻开的显示为 [?]）
+        if (!opponentHands[0].tiles.empty()) {
+            std::cout << COLOR_RED << playerNames[1 - myPlayerId] << "'s hand:" << COLOR_RESET << std::endl;
+            opponentHands[0].display(false);
+        }
         std::cout << std::endl;
+        
+        // 显示自己的手牌
+        if (!opponentHands[0].tiles.empty()) {
+            std::cout << COLOR_RED << playerNames[1 - myPlayerId] << "'s hand:" << COLOR_RESET << std::endl;
+            opponentHands[0].display(false);
+        }
+        if (!opponentHands[0].tiles.empty()) {
+            std::cout << COLOR_RED << playerNames[1 - myPlayerId] << "'s hand:" << COLOR_RESET << std::endl;
+            opponentHands[0].display(false);
+        }
         
         // 显示自己的手牌
         std::cout << COLOR_GREEN << "Your hand (" << playerNames[myPlayerId] << "):" << COLOR_RESET << std::endl;
